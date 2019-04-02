@@ -1,10 +1,10 @@
 <template lang="pug">
 #mdeditor
   v-toolbar#mdlist-tb(light color="white" flat)
-    v-toolbar-title mdedit
-    v-btn(icon @click="go('/md')")
+    v-toolbar-title md.edit
+    v-btn(icon @click="back")
       v-icon chevron_left
-    v-btn(icon :loading="status.saving" :disabled="cloud_working" @click="cloudsave()")
+    v-btn(icon :loading="status.saving" :disabled="!changed || cloud_working" @click="cloudsave()")
       v-icon save
     v-btn(icon :loading="status.getting" :disabled="cloud_working" @click="cloudget()")
       v-icon cloud_download
@@ -13,7 +13,7 @@
     .created_at 作成: {{ document.created_at || '-' }}
     .updated_at 更新: {{ document.updated_at || '-' }}
   #mdeditor-content
-    Editor(:document="document" :status="status")
+    Editor(:document="document" :status="status" @editor-keypress="editor_keypress")
     Previewer(:document="document")
 </template>
 
@@ -36,7 +36,9 @@ export default class MDEdit extends Vue {
     saving: false,
     getting: false,
   }
-  text: string = ""
+  private anchor = {
+    title: "", text: "",
+  }
 
   get not_saved(): boolean {
     return !this.document.created_at && !!this.document.text.match(/^(\s*\n)*\s*$/u)
@@ -60,15 +62,21 @@ export default class MDEdit extends Vue {
     }
   }
 
+  get changed(): boolean {
+    return this.document.title != this.anchor.title || this.document.text != this.anchor.text
+  }
+
   get cloud_working(): boolean {
     return this.status.saving || this.status.getting
   }
 
   async cloudsave() {
-    if (this.cloud_working) { return }
+    if (!this.changed || this.cloud_working) { return }
     try {
       this.status.saving = true
       const result = await this.document.save()
+      this.anchor.title = this.document.title
+      this.anchor.text = this.document.text
       console.log(result, "!!!!")
       this.$emit("snackon", { text: "saved.", })
     } catch(e) {
@@ -83,6 +91,8 @@ export default class MDEdit extends Vue {
     try {
       this.status.getting = true
       this.document = await MDDocument.get(this.document_id)
+      this.anchor.title = this.document.title
+      this.anchor.text = this.document.text
       if (!no_motion) {
         this.$emit("snackon", { text: "loaded.", })
       }
@@ -93,7 +103,25 @@ export default class MDEdit extends Vue {
     this.status.getting = false
   }
 
+  back() {
+    if (this.changed) {
+      if (!confirm("編集内容が破棄されます")) { return }
+    }
+    this.go('/md')
+  }
+
   go(path: string) { this.$router.push(path) }
+
+  editor_keypress(payload: { action: string }) {
+    switch (payload.action) {
+    case "cloudsave":
+      this.cloudsave()
+      break
+    case "back":
+      this.back()
+      break
+    }
+  }
 
   mounted() {
     this.setdocument()

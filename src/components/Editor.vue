@@ -2,9 +2,13 @@
 #editor
   .tfields
     .field
-      input(type="text" v-model="document.title" :disabled="cloud_working")
+      input(type="text" v-model="document.title" :readonly="cloud_working" ref="tf"
+        @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
+      )
   .tarea
-    textarea(v-model="document.text" :disabled="cloud_working")
+    textarea(v-model="document.text" :readonly="cloud_working" ref="ta"
+      @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
+    )
 
 </template>
 
@@ -21,6 +25,24 @@ export default class Editor extends Vue {
 
   get cloud_working(): boolean {
     return this.status.saving || this.status.getting
+  }
+
+  kup(event: Event) {
+    // const ta: any = this.$refs.ta
+    // console.log({ selectionStart: ta.selectionStart, selectionEnd: ta.selectionEnd })
+    console.log(event)
+    if (event instanceof KeyboardEvent) {
+      switch (event.key) {
+      case "Escape":
+        event.preventDefault()
+        this.$emit("editor-keypress", { action: "back" })
+        break
+      case "s":
+        event.preventDefault()
+        this.$emit("editor-keypress", { action: "cloudsave" })
+        break
+      }
+    }
   }
 }
 </script>

@@ -1,7 +1,7 @@
 <template lang="pug">
 #mdlist
   v-toolbar#mdlist-tb(light color="white" flat)
-    v-toolbar-title mdlist
+    v-toolbar-title md.list
     v-btn(icon @click="go('/md/_new')")
       v-icon add_box
 
