@@ -7,7 +7,7 @@
     keep-alive
       router-view(v-on:snackon="pop_snackbar")
 
-  v-snackbar.snackbar(v-model="snackbar.on" :timeout="snackbar.timeout" multi-line=true :color="snackbar.cssclass" top)
+  v-snackbar.snackbar(v-model="snackbar.on" :timeout="snackbar.timeout" multi-line=true :color="snackbar.cssclass" bottom)
     = "{{ snackbar.text }}"
     v-btn(dark flat @click="snackbar.on = false") 閉じる
 </template>

@@ -3,10 +3,12 @@
   .tfields
     .field
       input(type="text" v-model="document.title" :readonly="cloud_working" ref="tf"
+        placeholder="document title" autocomplete="false" spellcheck="false"
         @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
       )
   .tarea
     textarea(v-model="document.text" :readonly="cloud_working" ref="ta"
+      autocomplete="false" spellcheck="false"
       @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
     )
 
@@ -28,18 +30,43 @@ export default class Editor extends Vue {
   }
 
   kup(event: Event) {
-    // const ta: any = this.$refs.ta
-    // console.log({ selectionStart: ta.selectionStart, selectionEnd: ta.selectionEnd })
     console.log(event)
     if (event instanceof KeyboardEvent) {
+      const keyWith = {
+        meta: event.metaKey,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+      }
       switch (event.key) {
       case "Escape":
         event.preventDefault()
         this.$emit("editor-keypress", { action: "back" })
         break
       case "s":
-        event.preventDefault()
-        this.$emit("editor-keypress", { action: "cloudsave" })
+        if (keyWith.meta || keyWith.ctrl) {
+          event.preventDefault()
+          this.$emit("editor-keypress", { action: "cloudsave" })
+        }
+        break
+      case "b":
+        const ta = this.$refs.ta
+        console.log(ta)
+        if ((keyWith.meta || keyWith.ctrl) && (ta instanceof HTMLInputElement)) {
+          event.preventDefault()
+          const ss = ta.selectionStart, se = ta.selectionEnd
+          if (typeof ss === "number" && typeof se === "number") {
+            console.log({ 
+              selectionStart: ss, 
+              selectionEnd: se, 
+              value: ta.value,
+              sv: ta.value.substring(ss,se)
+            })
+            const s: string = ta.value
+            const v = "**" + s.substring(ss,se) + "**"
+            document.execCommand("insertText", false, v)
+          }
+        }
         break
       }
     }

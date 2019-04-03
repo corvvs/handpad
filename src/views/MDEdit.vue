@@ -1,17 +1,23 @@
 <template lang="pug">
 #mdeditor
-  v-toolbar#mdlist-tb(light color="white" flat)
+  v-toolbar#mdeditor-tb(light color="white" flat)
     v-toolbar-title md.edit
-    v-btn(icon @click="back")
-      v-icon chevron_left
-    v-btn(icon :loading="status.saving" :disabled="!changed || cloud_working" @click="cloudsave()")
-      v-icon save
-    v-btn(icon :loading="status.getting" :disabled="cloud_working" @click="cloudget()")
-      v-icon cloud_download
+    v-toolbar-items
+      v-btn(icon @click="back")
+        v-icon chevron_left
+      v-btn(icon :loading="status.saving" :disabled="!savable || !changed || cloud_working" @click="cloudsave()")
+        v-icon save
+      v-btn(icon :loading="status.getting" :disabled="not_saved || cloud_working" @click="cloudget()")
+        v-icon cloud_download
+      v-btn(icon @click.stop="document.star(!document.starred)" :disabled="not_saved")
+        v-icon(:color="document.starred ? 'blue' : 'grey'") star
+    v-toolbar-items
+      v-btn(icon :loading="status.deleting" :disabled="not_saved || cloud_working" @click="clouddelete()")
+        v-icon(color="red") delete
   #mdeditor-docdata
     .id ID: {{ document_id }}
-    .created_at 作成: {{ document.created_at || '-' }}
-    .updated_at 更新: {{ document.updated_at || '-' }}
+    .created_at 作成: {{ document.created_at ? document.created_at.toLocaleString() : '-' }}
+    .updated_at 更新: {{ document.updated_at ? document.updated_at.toLocaleString() : '-' }}
   #mdeditor-content
     Editor(:document="document" :status="status" @editor-keypress="editor_keypress")
     Previewer(:document="document")
@@ -34,10 +40,15 @@ export default class MDEdit extends Vue {
   document: MDDocument = MDDocument.blank()
   status: MDCloudStatus = {
     saving: false,
-    getting: false,
+    getting: false, 
+    deleting: false,
   }
   private anchor = {
     title: "", text: "",
+  }
+
+  get savable(): boolean {
+    return !!(this.document.title || "").trim()
   }
 
   get not_saved(): boolean {
@@ -71,7 +82,7 @@ export default class MDEdit extends Vue {
   }
 
   async cloudsave() {
-    if (!this.changed || this.cloud_working) { return }
+    if (!this.savable || !this.changed || this.cloud_working) { return }
     try {
       this.status.saving = true
       const result = await this.document.save()
@@ -89,6 +100,7 @@ export default class MDEdit extends Vue {
   async cloudget(no_motion: boolean = false) {
     if (this.cloud_working) { return }
     try {
+      if (!no_motion && !confirm("クラウドの保存内容を取得します\n(編集内容が破棄される可能性があります)")) { return }
       this.status.getting = true
       this.document = await MDDocument.get(this.document_id)
       this.anchor.title = this.document.title
@@ -103,9 +115,24 @@ export default class MDEdit extends Vue {
     this.status.getting = false
   }
 
+  async clouddelete() {
+    if (this.cloud_working) { return }
+    try {
+      if (!confirm("クラウドからドキュメントを削除します(取り消せません)")) { return }
+      this.status.deleting = true
+      await MDDocument.delete(this.document_id)
+      this.$emit("snackon", { text: "deleted.", })
+      this.back()
+    } catch(e) {
+      this.$emit("snackon", { text: "Error!!", color: "red info" })
+      console.error(e)
+    }
+    this.status.deleting = false
+  }
+
   back() {
     if (this.changed) {
-      if (!confirm("編集内容が破棄されます")) { return }
+      if (!confirm("編集内容は保存されません")) { return }
     }
     this.go('/md')
   }
@@ -119,6 +146,12 @@ export default class MDEdit extends Vue {
       break
     case "back":
       this.back()
+      break
+    case "text-replace":
+      const r: any = payload
+      if (typeof r.s === "number" && typeof r.e === "number" && typeof r.text === "string") {
+        this.document.text = this.document.text.substring(0,r.s) + r.text + this.document.text.substring(r.e)
+      }
       break
     }
   }
@@ -137,13 +170,20 @@ export default class MDEdit extends Vue {
     flex-direction column
     flex-wrap wrap
 
+    #mdeditor-tb
+      flex-grow 0
+      flex-shrink 0
+      flex-basis auto
+
     #mdeditor-docdata
+      flex-grow 0
+      flex-shrink 0
       background-color white
       display flex
       flex-direction row
       font-size smaller
       align-items center
-      min-height 2em
+      flex-basis 2em
       > * 
         padding 2px
         flex-grow 0
@@ -151,7 +191,6 @@ export default class MDEdit extends Vue {
         &:not(:first-child)
           margin-left 10px
         
-
     #mdeditor-content
       flex-grow 1
       flex-shrink 1

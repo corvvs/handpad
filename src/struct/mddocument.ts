@@ -7,12 +7,14 @@ const colname = "testdoc"
 export type MDCloudStatus = {
   saving: boolean
   getting: boolean
+  deleting: boolean
 }
 
 export class MDDocument {
   document_id: string
   title: string
   text: string
+  starred: boolean
   created_at?: Date
   updated_at?: Date
 
@@ -20,6 +22,7 @@ export class MDDocument {
     this.document_id = id || Date.now().toString() + "_" + uuid.v4()
     this.title = ""
     this.text = ""
+    this.starred = false
   }
 
   static blank() { return new this("") }
@@ -29,6 +32,7 @@ export class MDDocument {
       document_id: this.document_id,
       title: this.title,
       text: this.text,
+      starred: !!this.starred,
       created_at: this.created_at,
       updated_at: this.updated_at,
     }
@@ -39,6 +43,7 @@ export class MDDocument {
     const d = new this(data.document_id)
     d.title = data.title
     d.text = data.text
+    d.starred = !!data.starred
     console.log(data.created_at, data.updated_at)
     d.created_at = data.created_at && data.created_at.seconds ? new Date(data.created_at.seconds * 1000) : undefined
     d.updated_at = data.updated_at && data.updated_at.seconds ? new Date(data.updated_at.seconds * 1000) : undefined
@@ -65,11 +70,21 @@ export class MDDocument {
     const tt = new Date(ts)
     od.created_at = od.created_at || tt
     od.updated_at = tt
-    const result = await firestore().collection(colname).doc(this.document_id).set(od)
+    const doc = await firestore().collection(colname).doc(this.document_id).get()
+    const result = await (doc.exists ? doc.ref.update(od) : doc.ref.set(od))
     console.log(result)
     this.created_at = od.created_at
     this.updated_at = od.updated_at
     return result
+  }
+
+  static delete(id: string) {
+    return firestore().collection(colname).doc(id).delete()
+  }
+
+  async star(on: boolean) {
+    this.starred = on
+    await firestore().collection(colname).doc(this.document_id).update({ starred: on })
   }
 
   static observe_heads(callback: (d: firestore.DocumentChange) => void) {

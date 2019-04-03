@@ -24,10 +24,13 @@ export default class Previewer extends Vue {
   display flex
   flex-direction column
   #main_viewer
+    letter-spacing 0.08em
     overflow scroll
     text-align left
     padding 4px
     flex-grow 1
+    flex-shrink 1
+    flex-basis 0
     background-color #eee
 </style>
 
@@ -61,9 +64,12 @@ export default class Previewer extends Vue {
     code
       background-color cb-bg-color
       color cb-text-color
-      padding 2px 4px
+      padding 1px
       margin 0 2px
+      font-weight normal
       font-family cd-font-family
+      border-radius 0
+      box-shadow none
     pre
       background-color cb-bg-color
       color cb-text-color
