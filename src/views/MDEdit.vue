@@ -15,9 +15,9 @@
       v-btn(icon :loading="status.deleting" :disabled="not_saved || cloud_working" @click="clouddelete()")
         v-icon(color="red") delete
   #mdeditor-docdata
-    .id ID: {{ document_id }}
-    .created_at 作成: {{ document.created_at ? document.created_at.toLocaleString() : '-' }}
-    .updated_at 更新: {{ document.updated_at ? document.updated_at.toLocaleString() : '-' }}
+    .id ID: {{ this.document.document_id }}
+    .created_at 作成: {{ times.created_at ? times.created_at.toLocaleString() : '-' }}
+    .updated_at 更新: {{ times.updated_at ? times.updated_at.toLocaleString() : '-' }}
   #mdeditor-content
     Editor(:document="document" :status="status" @editor-keypress="editor_keypress")
     Previewer(:document="document")
@@ -37,22 +37,37 @@ import { MDDocument, MDCloudStatus } from '@/struct/mddocument';
 })
 export default class MDEdit extends Vue {
   @Prop() public document_id!: string
-  document: MDDocument = MDDocument.blank()
+  document: MDDocument = MDDocument.blank("")
   status: MDCloudStatus = {
     saving: false,
     getting: false, 
     deleting: false,
   }
+  times: {
+    created_at?: Date
+    updated_at?: Date
+  } = {
+    created_at: undefined,
+    updated_at: undefined,
+  }
   private anchor = {
     title: "", text: "",
   }
 
-  get savable(): boolean {
+  get savable() {
     return !!(this.document.title || "").trim()
   }
 
-  get not_saved(): boolean {
-    return !this.document.created_at && !!this.document.text.match(/^(\s*\n)*\s*$/u)
+  get not_saved() {
+    return !this.times.created_at
+  }
+
+  get changed() {
+    return this.document.title != this.anchor.title || this.document.text != this.anchor.text
+  }
+
+  get cloud_working() {
+    return this.status.saving || this.status.getting
   }
 
   @Watch('document_id')
@@ -64,21 +79,13 @@ export default class MDEdit extends Vue {
   setdocument() {
     console.log(this.document_id)
     if (!this.document_id || this.document_id === "_new") {
-      this.document = new MDDocument()
-      console.log(this.document)
-      this.$router.replace(`/md/${this.document.document_id}`)
+      this.document.clear()
+      const id = MDDocument.payout_id()
+      this.$router.replace(`/md/${id}`)
     } else {
-      this.document = MDDocument.blank()
+      this.document.switch(this.document_id)
       this.cloudget(true)
     }
-  }
-
-  get changed(): boolean {
-    return this.document.title != this.anchor.title || this.document.text != this.anchor.text
-  }
-
-  get cloud_working(): boolean {
-    return this.status.saving || this.status.getting
   }
 
   async cloudsave() {
@@ -88,7 +95,8 @@ export default class MDEdit extends Vue {
       const result = await this.document.save()
       this.anchor.title = this.document.title
       this.anchor.text = this.document.text
-      console.log(result, "!!!!")
+      this.times.created_at = this.document.created_at
+      this.times.updated_at = this.document.updated_at
       this.$emit("snackon", { text: "saved.", })
     } catch(e) {
       this.$emit("snackon", { text: "Error!!", color: "red info" })
@@ -102,9 +110,11 @@ export default class MDEdit extends Vue {
     try {
       if (!no_motion && !confirm("クラウドの保存内容を取得します\n(編集内容が破棄される可能性があります)")) { return }
       this.status.getting = true
-      this.document = await MDDocument.get(this.document_id)
+      await this.document.get()
       this.anchor.title = this.document.title
       this.anchor.text = this.document.text
+      this.times.created_at = this.document.created_at
+      this.times.updated_at = this.document.updated_at
       if (!no_motion) {
         this.$emit("snackon", { text: "loaded.", })
       }

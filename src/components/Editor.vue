@@ -49,10 +49,15 @@ export default class Editor extends Vue {
           this.$emit("editor-keypress", { action: "cloudsave" })
         }
         break
+      case "i":
       case "b":
+      case "k":
         const ta = this.$refs.ta
         console.log(ta)
-        if ((keyWith.meta || keyWith.ctrl) && (ta instanceof HTMLInputElement)) {
+        const paren = {
+          b: "**", i: "*", k: "~~",
+        }[event.key]
+        if ((keyWith.meta || keyWith.ctrl) && (ta instanceof HTMLTextAreaElement) && paren) {
           event.preventDefault()
           const ss = ta.selectionStart, se = ta.selectionEnd
           if (typeof ss === "number" && typeof se === "number") {
@@ -63,7 +68,7 @@ export default class Editor extends Vue {
               sv: ta.value.substring(ss,se)
             })
             const s: string = ta.value
-            const v = "**" + s.substring(ss,se) + "**"
+            const v = paren + s.substring(ss,se) + paren
             document.execCommand("insertText", false, v)
           }
         }

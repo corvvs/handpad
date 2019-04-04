@@ -18,6 +18,10 @@ export class MDDocument {
   created_at?: Date
   updated_at?: Date
 
+  static payout_id() {
+    return Date.now().toString() + "_" + uuid.v4()
+  }
+
   constructor(id?: string) {
     this.document_id = id || Date.now().toString() + "_" + uuid.v4()
     this.title = ""
@@ -25,7 +29,17 @@ export class MDDocument {
     this.starred = false
   }
 
-  static blank() { return new this("") }
+  static blank(id: string) { return new this(id) }
+  clear() {
+    this.title = ""
+    this.text = ""
+    this.starred = false
+    this.created_at = undefined
+    this.updated_at = undefined
+  }
+  switch(id: string) {
+    this.document_id = id
+  }
 
   serialize(): any {
     return {
@@ -44,16 +58,25 @@ export class MDDocument {
     d.title = data.title
     d.text = data.text
     d.starred = !!data.starred
-    console.log(data.created_at, data.updated_at)
     d.created_at = data.created_at && data.created_at.seconds ? new Date(data.created_at.seconds * 1000) : undefined
     d.updated_at = data.updated_at && data.updated_at.seconds ? new Date(data.updated_at.seconds * 1000) : undefined
-    console.log(d)
     return d
   }
 
-  static async get(id: string) {
-    const doc = await firebase.firestore().collection(colname).doc(id).get()
-    return doc.exists ? this.deserialize(doc) : new this()
+  assimilate(doc: firestore.DocumentSnapshot) {
+    const data = doc.data() || {}
+    this.title = data.title
+    this.text = data.text
+    this.starred = !!data.starred
+    this.created_at = data.created_at && data.created_at.seconds ? new Date(data.created_at.seconds * 1000) : undefined
+    this.updated_at = data.updated_at && data.updated_at.seconds ? new Date(data.updated_at.seconds * 1000) : undefined
+  }
+
+  async get() {
+    const doc = await firebase.firestore().collection(colname).doc(this.document_id).get()
+    if (doc.exists) {
+      this.assimilate(doc)
+    }
   }
 
   static async find_heads(startAfter?: string) {
@@ -72,7 +95,6 @@ export class MDDocument {
     od.updated_at = tt
     const doc = await firestore().collection(colname).doc(this.document_id).get()
     const result = await (doc.exists ? doc.ref.update(od) : doc.ref.set(od))
-    console.log(result)
     this.created_at = od.created_at
     this.updated_at = od.updated_at
     return result
