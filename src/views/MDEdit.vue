@@ -1,5 +1,5 @@
 <template lang="pug">
-#mdeditor
+#mdeditor(@keyup.esc="keyup_esc" tabindex="0")
   v-toolbar#mdeditor-tb(light color="white" flat)
     v-toolbar-title md.edit
     v-toolbar-items
@@ -76,10 +76,15 @@ export default class MDEdit extends Vue {
     this.setdocument()
   }
 
+  keyup_esc(event: Event) {
+    console.log(event)
+    this.back()
+  }
+
   setdocument() {
     console.log(this.document_id)
+    this.document.clear()
     if (!this.document_id || this.document_id === "_new") {
-      this.document.clear()
       const id = MDDocument.payout_id()
       this.$router.replace(`/md/${id}`)
     } else {
@@ -168,6 +173,23 @@ export default class MDEdit extends Vue {
 
   mounted() {
     this.setdocument()
+  }
+
+  activated() {
+    window.addEventListener("keyup", this.mkeyup)
+    console.log("acc")
+  }
+
+  deactivated() {
+    window.removeEventListener("keyup", this.mkeyup)
+    console.log("deacc")
+  }
+
+  mkeyup(event: KeyboardEvent) {
+    console.log(event)
+    if (event.key === "Escape") {
+      this.back()
+    }
   }
 }
 </script>

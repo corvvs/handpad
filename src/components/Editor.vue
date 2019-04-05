@@ -4,12 +4,12 @@
     .field
       input(type="text" v-model="document.title" :readonly="cloud_working" ref="tf"
         placeholder="document title" autocomplete="false" spellcheck="false"
-        @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
+        @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc.stop="kup"
       )
   .tarea
     textarea(v-model="document.text" :readonly="cloud_working" ref="ta"
       autocomplete="false" spellcheck="false"
-      @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc="kup"
+      @keyup.ctrl="kup" @keydown.meta="kup" @keyup.esc.stop="kup"
     )
 
 </template>

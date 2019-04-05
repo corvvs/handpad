@@ -22,7 +22,7 @@
           v-list-tile-action
           v-list-tile-content
             v-list-tile-title
-              span.head 件名
+              span.head タイトル
         v-list-tile(v-for="d in filtered_docs" :key="d.document_id" @click="go(`/md/${d.document_id}`)")
           .time(:style='ordering.up_updated ? { color: "#2196f3" } : {}')
             = "{{ (ordering.up_updated ? d.updated_at : d.created_at).toLocaleString() }}"
