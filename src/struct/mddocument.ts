@@ -1,8 +1,8 @@
-import firebase, { firestore, functions } from "firebase";
+import firebase, { firestore, functions, auth } from "firebase";
 import * as uuid from 'uuid'
 import { start } from 'repl';
 
-const colname = "testdoc"
+const colname = "mddocs"
 
 export type MDCloudStatus = {
   saving: boolean
@@ -20,6 +20,12 @@ export class MDDocument {
 
   static payout_id() {
     return Date.now().toString() + "_" + uuid.v4()
+  }
+
+  static collection() {
+    const u = auth().currentUser
+    if (!u) { throw { message: "not authorized" } }
+    return firebase.firestore().collection("users").doc(u.uid).collection(colname)
   }
 
   constructor(id?: string) {
@@ -73,16 +79,16 @@ export class MDDocument {
   }
 
   async get() {
-    const doc = await firebase.firestore().collection(colname).doc(this.document_id).get()
+    const doc = await MDDocument.collection().doc(this.document_id).get()
     if (doc.exists) {
       this.assimilate(doc)
     }
   }
 
   static async find_heads(startAfter?: string) {
-    let q = firebase.firestore().collection(colname).orderBy("created_at", "desc").limit(100)
+    let q = MDDocument.collection().orderBy("created_at", "desc").limit(100)
     if (startAfter) {
-      q = q.startAfter(await firebase.firestore().collection(colname).doc(startAfter).get())
+      q = q.startAfter(await this.collection().doc(startAfter).get())
     }
     return (await q.get()).docs.map(d => this.deserialize(d))
   }
@@ -93,7 +99,7 @@ export class MDDocument {
     const tt = new Date(ts)
     od.created_at = od.created_at || tt
     od.updated_at = tt
-    const doc = await firestore().collection(colname).doc(this.document_id).get()
+    const doc = await MDDocument.collection().doc(this.document_id).get()
     const result = await (doc.exists ? doc.ref.update(od) : doc.ref.set(od))
     this.created_at = od.created_at
     this.updated_at = od.updated_at
@@ -101,16 +107,16 @@ export class MDDocument {
   }
 
   static delete(id: string) {
-    return firestore().collection(colname).doc(id).delete()
+    return MDDocument.collection().doc(id).delete()
   }
 
   async star(on: boolean) {
     this.starred = on
-    await firestore().collection(colname).doc(this.document_id).update({ starred: on })
+    await MDDocument.collection().doc(this.document_id).update({ starred: on })
   }
 
   static observe_heads(callback: (d: firestore.DocumentChange) => void) {
-    return firebase.firestore().collection(colname).orderBy("created_at", "desc")
+    return this.collection().orderBy("created_at", "desc")
       .limit(100)
       .onSnapshot(snapshot => snapshot.docChanges().forEach(callback))
   }
