@@ -10,7 +10,12 @@
       v-btn(icon :loading="status.getting" :disabled="not_saved || cloud_working" @click="cloudget()")
         v-icon cloud_download
       v-btn(icon @click.stop="document.star(!document.starred)" :disabled="not_saved")
-        v-icon(:color="document.starred ? 'blue' : 'grey'") star
+        v-icon(:color="document.starred ? 'blue' : 'grey'") star      
+
+      v-btn(icon @click="copy_text_to")
+        v-icon file_copy
+
+    v-spacer
     v-toolbar-items
       v-btn(icon :loading="status.deleting" :disabled="not_saved || cloud_working" @click="clouddelete()")
         v-icon(color="red") delete
@@ -79,6 +84,17 @@ export default class MDEdit extends Vue {
   keyup_esc(event: Event) {
     console.log(event)
     this.back()
+  }
+
+  copy_text_to() {
+    try {
+      const nav: any = navigator
+      nav.clipboard.writeText(this.document.text)
+      this.$emit("snackon", { text: "copied text to clipboard", })
+    } catch(e) {
+      console.error(e)
+      this.$emit("snackon", { text: "failed to copy text", cssclass: "red" })
+    }
   }
 
   setdocument() {
@@ -177,16 +193,13 @@ export default class MDEdit extends Vue {
 
   activated() {
     window.addEventListener("keyup", this.mkeyup)
-    console.log("acc")
   }
 
   deactivated() {
     window.removeEventListener("keyup", this.mkeyup)
-    console.log("deacc")
   }
 
   mkeyup(event: KeyboardEvent) {
-    console.log(event)
     if (event.key === "Escape") {
       this.back()
     }

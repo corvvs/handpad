@@ -4,10 +4,9 @@
     v-card
       v-card-title 認証
       v-card-text
-        v-text-field(label="user id(mail)" v-model="authparam.id")
-        v-text-field(type="password" label="password" v-model="authparam.password")
+        v-text-field(label="user id(mail)" v-model="authparam.id" :readonly="authorizing")
+        v-text-field(type="password" label="password" v-model="authparam.password" :readonly="authorizing" @keyup.enter="go_auth")
 
-        .cu {{ cu }}
       v-card-actions.actions
         v-btn(:disabled="!trimmed_authparam || authorizing" :loading="authorizing" @click="go_auth") Go
 

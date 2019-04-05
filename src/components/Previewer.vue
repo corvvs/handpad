@@ -5,7 +5,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { Marked } from 'marked-ts'
+import { Marked, MarkedOptions } from 'marked-ts'
 import { MDDocument, MDCloudStatus } from '@/struct/mddocument';
 
 @Component
@@ -13,7 +13,10 @@ export default class Previewer extends Vue {
   @Prop() document!: MDDocument
 
   get htmldoc(): string {
-    return Marked.parse(this.document.text)
+    const option = new MarkedOptions()
+    option.gfm = true
+    option.breaks = true
+    return Marked.parse(this.document.text, option)
   }
 }
 </script>
@@ -27,7 +30,7 @@ export default class Previewer extends Vue {
     letter-spacing 0.08em
     overflow scroll
     text-align left
-    padding 4px
+    padding 8px
     flex-grow 1
     flex-shrink 1
     flex-basis 0
@@ -38,7 +41,6 @@ export default class Previewer extends Vue {
 @import "../assets/common"
 #previewer
   #main_viewer
-
     font-size 14px
     p, ul, ol, dl, li, blockquote
       margin 0
@@ -49,10 +51,13 @@ export default class Previewer extends Vue {
 
     h1
       border-bottom 2px solid
+      margin-bottom 16px
     h2
       border-bottom 1px solid
+      margin-bottom 12px
     h3
       border-bottom 1px dashed
+      margin-bottom 8px
     
     blockquote
       padding 0.8em
