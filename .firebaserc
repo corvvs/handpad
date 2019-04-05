@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "straw-9b841"
+  },
+  "targets": {
+    "straw-9b841": {
+      "hosting": {
+        "strawcloud": [
+          "strawcloud"
+        ]
+      }
+    }
+  }
+}
