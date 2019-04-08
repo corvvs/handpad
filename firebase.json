@@ -7,6 +7,10 @@
   },
   "hosting": {
     "target": "strawcloud",
-    "public": "dist"
+    "public": "dist",
+    "rewrites": [ {
+      "source": "**",
+      "destination": "/index.html"
+    } ]  
   }
 }
