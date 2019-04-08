@@ -71,7 +71,7 @@ export default class MDList extends Vue {
       ftd = _(ftd).sortBy(d => d.updated_at ? -d.updated_at.getTime() : 0)
     }
     if (this.ordering.up_star) {
-      ftd = _(ftd).sortBy(d => !d.starred)
+      ftd = _(ftd).select(d => d.starred)
     }
     return ftd
   }
@@ -136,6 +136,7 @@ export default class MDList extends Vue {
   #mdlist-content
     flex-grow 1
     flex-shrink 1
+    overflow-y scroll
 
     .time
       font-size smaller
