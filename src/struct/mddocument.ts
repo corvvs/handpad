@@ -83,6 +83,7 @@ export class MDDocument {
     if (doc.exists) {
       this.assimilate(doc)
     }
+    return doc.exists
   }
 
   static async find_heads(startAfter?: string) {
