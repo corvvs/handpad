@@ -228,7 +228,7 @@ export default class MDEdit extends Vue {
 }
 </script>
 
-<style lang="stylus">
+<style scoped lang="stylus">
   #mdeditor
     height 100%
     margin 0

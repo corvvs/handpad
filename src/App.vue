@@ -4,6 +4,8 @@
     v-navigation-drawer(permanent app light mini-variant)
       v-btn(icon large @click="go('/md')")
         v-icon library_books
+      v-btn(icon large @click="go('/chart')")
+        v-icon show_chart
 
       .vertical-spacer
       v-btn(icon large @click="logout" :disabled="signing_out" :loading="signing_out")
